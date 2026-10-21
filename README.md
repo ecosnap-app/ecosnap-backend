@@ -35,17 +35,20 @@ La decisión de reciclar ocurre en cualquier parte y necesita cámara y respuest
 
 **Backend:** una API en Node.js con Express que expone la clasificación con IA y el ranking. La razón de tener backend propio es de seguridad: la llave de la API de Gemini queda en el servidor y no dentro del APK. Se despliega en Render, en su plan gratuito.
 
-**Servicios en la nube (proveedor: Google):**
+**Servicios en la nube:**
 
 | Servicio | Modelo | Para qué lo usamos |
 |---|---|---|
-| Firebase Authentication | SaaS | Registro, inicio y cierre de sesión (Sprint 4) |
-| Cloud Firestore | PaaS | Clasificaciones, puntos, rachas y ranking |
-| Firebase Storage | PaaS | Fotos de residuos y de perfil |
+| Supabase Auth | SaaS | Registro, inicio y cierre de sesión, con el token en el almacenamiento seguro del celular |
+| Supabase Database (PostgreSQL) | PaaS | Perfiles, clasificaciones, puntos, rachas y ranking, con seguridad por fila (RLS) |
+| Supabase Storage | PaaS | Fotos de los residuos |
 | Gemini API | SaaS | Clasificación de la imagen del residuo |
-| Google Cloud | IaaS | Infraestructura sobre la que corre todo lo anterior |
+| Render | PaaS | Despliegue del backend en Node.js |
+| AWS y Google Cloud | IaaS | Infraestructura sobre la que corren Supabase y Gemini |
 
-**Gestión del proyecto:** GitHub para el código y los Pull Requests, GitHub Projects para el tablero Kanban con el Product Backlog (18 historias de usuario, 6 por integrante), y Figma para el prototipo del Sprint 2 con Material Design 3.
+Al inicio planeamos usar Firebase. Cambiamos a Supabase porque los datos de EcoSnap son relacionales (usuario → clasificaciones → caneca) y el ranking necesita ordenar y contar: PostgreSQL lo resuelve con llaves foráneas, índices y una sola consulta.
+
+**Gestión del proyecto:** GitHub para el código y los Pull Requests, GitHub Projects para el [tablero Kanban](https://github.com/orgs/ecosnap-app/projects) con el Product Backlog (18 historias de usuario, 6 por integrante), y Figma para el prototipo del Sprint 2 con Material Design 3.
 
 Todo el stack se usa en capa gratuita. El costo del proyecto es $0.
 
@@ -65,7 +68,9 @@ Todo el stack se usa en capa gratuita. El costo del proyecto es $0.
 | 1 | Product Backlog y este documento de pitch |
 | 2 | Prototipo en Figma y diagrama de arquitectura (MVVM y servicios cloud) |
 | 3 | Esqueleto de la app con navegación y APK instalable |
-| 4 | Autenticación con Firebase Auth |
+| 4 | Autenticación con Supabase Auth |
+| Corte II · Taller 5 | Corrección de 12 bugs reportados por el docente, una rama y un PR por issue |
+| Corte II · Taller 6 | Modelado e implementación de la base de datos en Supabase |
 
 ## Distribución del equipo
 
@@ -74,3 +79,19 @@ Todo el stack se usa en capa gratuita. El costo del proyecto es $0.
 | Brandon | Autenticación y perfil | HU-01 a HU-06 |
 | Sarihat | Clasificación con IA | HU-07 a HU-12 |
 | Adriana | Gamificación y navegación | HU-13 a HU-18 |
+
+## Base de datos
+
+La base de datos está en Supabase (PostgreSQL). Todo lo necesario para crearla está en este repositorio:
+
+| Archivo | Contenido |
+|---|---|
+| [`supabase/01_tablas.sql`](supabase/01_tablas.sql) | Tablas `usuarios`, `canecas` y `clasificaciones`, catálogo de canecas e índices |
+| [`supabase/02_funciones.sql`](supabase/02_funciones.sql) | Trigger que crea el perfil al registrarse y función `registrar_clasificacion()` |
+| [`supabase/03_seguridad.sql`](supabase/03_seguridad.sql) | Seguridad por fila (RLS), permisos y bucket de fotos |
+| [`docs/base-de-datos/modelado.md`](docs/base-de-datos/modelado.md) | Entidades, relaciones y decisiones de diseño |
+| [`docs/base-de-datos/diagrama-er.md`](docs/base-de-datos/diagrama-er.md) | Diagrama entidad-relación |
+| [`docs/base-de-datos/diccionario-datos.md`](docs/base-de-datos/diccionario-datos.md) | Diccionario de datos completo |
+
+Para crearla desde cero: en Supabase, **SQL Editor → New query**, pegar cada archivo en orden (`01`, `02`, `03`) y darle **Run**. Los tres archivos se pueden volver a ejecutar sin romper nada.
+
